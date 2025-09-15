@@ -12,15 +12,15 @@
       background: url('BG.jpg') no-repeat center center fixed;
       background-size: cover;
       color: #fff;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
     }
     .container {
       max-width: 900px;
       margin: 2rem auto;
       padding: 1rem;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0, 0, 0, 0.7);
       border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
     }
     h1 {
       text-align: center;
@@ -52,7 +52,7 @@
     .result {
       margin-top: 2rem;
       padding: 1rem;
-      background: rgba(0,0,0,0.8);
+      background: rgba(0, 0, 0, 0.8);
       border-radius: 10px;
       border: 1px solid #444;
     }
@@ -62,6 +62,7 @@
   </style>
 </head>
 <body>
+
   <div class="container">
     <h1>Chaos Tower Simulator</h1>
 
@@ -78,34 +79,26 @@
 
     <div class="result" id="result"></div>
   </div>
-
+  
   <script>
     const maxFloorSlider = document.getElementById("maxFloor");
-    const maxFloorValue = document.getElementById("maxFloorValue");
     const ticketsSlider = document.getElementById("ticketsOwned");
+    const maxFloorValue = document.getElementById("maxFloorValue");
     const ticketsValue = document.getElementById("ticketsValue");
+    const resultDiv = document.getElementById("result");
     const essenceInput = document.getElementById("essenceValue");
     const recommendBtn = document.getElementById("recommendBtn");
-    const resultDiv = document.getElementById("result");
-
-    maxFloorSlider.addEventListener("input", () => {
-      maxFloorValue.textContent = maxFloorSlider.value;
-    });
-    ticketsSlider.addEventListener("input", () => {
-      ticketsValue.textContent = ticketsSlider.value;
-    });
 
     function calculateEssencePerFloor(floor) {
       if (floor <= 0) return 0;
-      let tier = Math.floor((floor - 1) / 10) + 1;
-      return tier * 5;
+      return Math.floor((floor - 1) / 10 + 1) * 5;
     }
 
-    function calculateEssenceForFloorRange(start, end, maxFloor) {
+    function calculateEssenceForRange(start, end, maxFloor) {
       end = Math.min(end, maxFloor);
-      let sum = 0;
-      for (let f = start + 1; f <= end; f++) sum += calculateEssencePerFloor(f);
-      return sum;
+      let total = 0;
+      for (let f = start + 1; f <= end; f++) total += calculateEssencePerFloor(f);
+      return total;
     }
 
     function simulateEvent(maxFloor, boughtTickets = 0) {
@@ -122,15 +115,15 @@
       // Day 1
       let ticketsPhase1 = startingTickets + regenBeforeFirstReset + boughtTickets;
       let climb = Math.min(ticketsPhase1, maxFloor - currentFloor);
-      totalEssence += calculateEssenceForFloorRange(currentFloor, currentFloor + climb, maxFloor);
+      totalEssence += calculateEssenceForRange(currentFloor, currentFloor + climb, maxFloor);
       currentFloor += climb;
       highestFloor = Math.max(highestFloor, currentFloor);
 
-      // Days 2–7
-      for (let i = 0; i < 6; i++) {
+      // Days 2-7
+      for (let day = 0; day < 6; day++) {
         currentFloor = Math.max(0, currentFloor - dailyDrop);
         climb = Math.min(dailyTickets, maxFloor - currentFloor);
-        totalEssence += calculateEssenceForFloorRange(currentFloor, currentFloor + climb, maxFloor);
+        totalEssence += calculateEssenceForRange(currentFloor, currentFloor + climb, maxFloor);
         currentFloor += climb;
         highestFloor = Math.max(highestFloor, currentFloor);
       }
@@ -138,40 +131,60 @@
       // Final half-day
       currentFloor = Math.max(0, currentFloor - dailyDrop);
       climb = Math.min(finalTickets, maxFloor - currentFloor);
-      totalEssence += calculateEssenceForFloorRange(currentFloor, currentFloor + climb, maxFloor);
+      totalEssence += calculateEssenceForRange(currentFloor, currentFloor + climb, maxFloor);
       currentFloor += climb;
       highestFloor = Math.max(highestFloor, currentFloor);
 
-      return { totalEssence, highestFloor, finalFloor: currentFloor, boughtTickets, crystalsSpent: boughtTickets * 50 };
+      return {
+        totalEssence,
+        highestFloor,
+        finalFloor: currentFloor,
+        boughtTickets,
+        crystalsSpent: boughtTickets * 50
+      };
     }
 
-    function recommendExtraTicketsBruteForce(maxFloor, alreadyOwned, essencePer50) {
-      let bestOption = {
-        boughtTickets: 0,
-        totalEssence: simulateEvent(maxFloor, alreadyOwned).totalEssence,
-        crystalsSpent: 0
-      };
-
+    function recommendExtraTickets(maxFloor, alreadyOwned, essencePer50) {
+      let bestOption = simulateEvent(maxFloor, alreadyOwned);
       const maxExtraTickets = 200;
-      for (let extra = 1; extra <= maxExtraTickets; extra++) {
-        const prevResult = simulateEvent(maxFloor, alreadyOwned + extra - 1);
-        const nextResult = simulateEvent(maxFloor, alreadyOwned + extra);
-        const marginalEssence = nextResult.totalEssence - prevResult.totalEssence;
 
-        if (marginalEssence >= essencePer50) {
+      for (let extra = 1; extra <= maxExtraTickets; extra++) {
+        const prev = simulateEvent(maxFloor, alreadyOwned + extra - 1);
+        const next = simulateEvent(maxFloor, alreadyOwned + extra);
+        const marginal = next.totalEssence - prev.totalEssence;
+
+        if (marginal >= essencePer50) {
           bestOption = {
             boughtTickets: extra,
-            totalEssence: nextResult.totalEssence,
+            totalEssence: next.totalEssence,
             crystalsSpent: extra * 50
           };
-        } else {
-          break;
-        }
+        } else break;
 
-        if (nextResult.highestFloor >= maxFloor) break;
+        if (next.highestFloor >= maxFloor) break;
       }
 
       return bestOption;
+    }
+
+    function updateSlidersDisplay() {
+      maxFloorValue.textContent = maxFloorSlider.value;
+      ticketsValue.textContent = ticketsSlider.value;
+    }
+
+    function updateSimulation() {
+      updateSlidersDisplay();
+      const maxFloor = parseInt(maxFloorSlider.value);
+      const ticketsOwned = parseInt(ticketsSlider.value);
+      const result = simulateEvent(maxFloor, ticketsOwned);
+
+      resultDiv.innerHTML = `
+        <strong>Total Essence:</strong> ${result.totalEssence}<br>
+        <strong>Highest Floor Reached:</strong> ${result.highestFloor}<br>
+        <strong>Final Floor:</strong> ${result.finalFloor}<br>
+        <strong>Tickets Used:</strong> ${result.boughtTickets}<br>
+        <strong>Crystals Spent:</strong> ${result.crystalsSpent}
+      `;
     }
 
     recommendBtn.addEventListener("click", () => {
@@ -179,7 +192,7 @@
       const ticketsOwned = parseInt(ticketsSlider.value);
       const essencePer50 = parseInt(essenceInput.value);
 
-      const best = recommendExtraTicketsBruteForce(maxFloor, ticketsOwned, essencePer50);
+      const best = recommendExtraTickets(maxFloor, ticketsOwned, essencePer50);
 
       resultDiv.innerHTML = `
         <strong>Recommended Extra Tickets to Buy:</strong> ${best.boughtTickets}<br>
@@ -187,6 +200,13 @@
         <strong>Crystals Spent:</strong> ${best.crystalsSpent}
       `;
     });
+
+    maxFloorSlider.addEventListener("input", updateSimulation);
+    ticketsSlider.addEventListener("input", updateSimulation);
+
+    // Initial render
+    updateSimulation();
   </script>
+
 </body>
 </html>
