@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chaos Tower Simulator</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; max-width: 600px; margin: auto; }
+    label { display: block; margin-top: 1rem; }
+    input[type="range"], input[type="number"] { width: 100%; padding: 0.3rem; margin-top: 0.2rem; }
+    .value { font-weight: bold; }
+    .result { margin-top: 1rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px; background: #f9f9f9; }
+    button { margin-top: 1rem; padding: 0.5rem; width: 100%; }
+  </style>
+</head>
+<body>
+
+  <h1>Chaos Tower Simulator</h1>
+
+  <label>Maximum Floor: <span class="value" id="maxFloorValue">250</span></label>
+  <input type="range" id="maxFloor" min="1" max="300" value="250">
+
+  <label>Tickets Already Owned: <span class="value" id="ticketsValue">0</span></label>
+  <input type="range" id="ticketsOwned" min="0" max="200" value="0">
+
+  <label>Essence Value per 50 Crystals:</label>
+  <input type="number" id="essenceValue" min="1" value="40">
+
+  <button id="recommendBtn">Recommend Extra Tickets</button>
+
+  <div class="result" id="result"></div>
+
+  <script>
+    function calculateEssencePerFloor(floor) {
+      if (floor <= 0) return 0;
+      let tier = Math.floor((floor - 1) / 10) + 1;
+      return tier * 5;
+    }
+
+    function calculateEssenceForRange(startFloor, endFloor, maxFloor) {
+      endFloor = Math.min(endFloor, maxFloor);
+      let total = 0;
+      for (let f = startFloor + 1; f <= endFloor; f++) {
+        total += calculateEssencePerFloor(f);
+      }
+      return total;
+    }
+
+    function simulateEvent(maxFloor, boughtTickets = 0) {
+      const startingTickets = 24;
+      const regenBeforeFirstReset = 24;
+      const dailyTickets = 48;
+      const finalTickets = 24;
+      const dailyDrop = 20;
+
+      let currentFloor = 0;
+      let highestFloor = 0;
+      let totalEssence = 0;
+
+      // Day 1
+      let ticketsPhase1 = startingTickets + regenBeforeFirstReset + boughtTickets;
+      let climb = Math.min(ticketsPhase1, maxFloor - currentFloor);
+      totalEssence += calculateEssenceForRange(currentFloor, currentFloor + climb, maxFloor);
+      currentFloor += climb;
+      highestFloor = Math.max(highestFloor, currentFloor);
+
+      // Days 2-7
+      for (let day = 0; day < 6; day++) {
+        currentFloor = Math.max(0, currentFloor - dailyDrop);
+        climb = Math.min(dailyTickets, maxFloor - currentFloor);
+        totalEssence += calculateEssenceForRange(currentFloor, currentFloor + climb, maxFloor);
+        currentFloor += climb;
+        highestFloor = Math.max(highestFloor, currentFloor);
+      }
+
+      // Final half-day
+      currentFloor = Math.max(0, currentFloor - dailyDrop);
+      climb = Math.min(finalTickets, maxFloor - currentFloor);
+      totalEssence += calculateEssenceForRange(currentFloor, currentFloor + climb, maxFloor);
+      currentFloor += climb;
+      highestFloor = Math.max(highestFloor, currentFloor);
+
+      return {
+        totalEssence,
+        highestFloor,
+        finalFloor: currentFloor,
+        boughtTickets,
+        crystalsSpent: boughtTickets * 50
+      };
+    }
+
+    function recommendExtraTickets(maxFloor, alreadyOwned, essencePer50) {
+      let bestOption = simulateEvent(maxFloor, alreadyOwned);
+      const maxExtraTickets = 200;
+
+      for (let tickets = 1; tickets <= maxExtraTickets; tickets++) {
+        const prevResult = simulateEvent(maxFloor, alreadyOwned + tickets - 1);
+        const nextResult = simulateEvent(maxFloor, alreadyOwned + tickets);
+        const marginalEssence = nextResult.totalEssence - prevResult.totalEssence;
+
+        if (marginalEssence >= essencePer50) {
+          bestOption = {
+            boughtTickets: tickets,
+            totalEssence: nextResult.totalEssence,
+            crystalsSpent: tickets * 50,
+            effectiveEssenceValue: nextResult.totalEssence
+          };
+        } else {
+          break; // stop if next ticket is not worth it
+        }
+
+        if (nextResult.highestFloor >= maxFloor) break;
+      }
+
+      return bestOption;
+    }
+
+    const maxFloorSlider = document.getElementById("maxFloor");
+    const ticketsSlider = document.getElementById("ticketsOwned");
+    const maxFloorValue = document.getElementById("maxFloorValue");
+    const ticketsValue = document.getElementById("ticketsValue");
+    const resultDiv = document.getElementById("result");
+    const essenceInput = document.getElementById("essenceValue");
+    const recommendBtn = document.getElementById("recommendBtn");
+
+    function updateSlidersDisplay() {
+      maxFloorValue.textContent = maxFloorSlider.value;
+      ticketsValue.textContent = ticketsSlider.value;
+    }
+
+    function updateSimulation() {
+      updateSlidersDisplay();
+      const maxFloor = parseInt(maxFloorSlider.value);
+      const ticketsOwned = parseInt(ticketsSlider.value);
+      const result = simulateEvent(maxFloor, ticketsOwned);
+
+      resultDiv.innerHTML = `
+        <strong>Total Essence:</strong> ${result.totalEssence}<br>
+        <strong>Highest Floor Reached:</strong> ${result.highestFloor}<br>
+        <strong>Final Floor:</strong> ${result.finalFloor}<br>
+        <strong>Tickets Used:</strong> ${result.boughtTickets}<br>
+        <strong>Crystals Spent:</strong> ${result.crystalsSpent}
+      `;
+    }
+
+    recommendBtn.addEventListener("click", () => {
+      updateSlidersDisplay();
+      const maxFloor = parseInt(maxFloorSlider.value);
+      const ticketsOwned = parseInt(ticketsSlider.value);
+      const essencePer50 = parseInt(essenceInput.value);
+
+      const best = recommendExtraTickets(maxFloor, ticketsOwned, essencePer50);
+
+      resultDiv.innerHTML = `
+        <strong>Recommended Extra Tickets to Buy:</strong> ${best.boughtTickets}<br>
+        <strong>Total Essence After Buying:</strong> ${best.totalEssence}<br>
+        <strong>Crystals Spent:</strong> ${best.crystalsSpent}
+      `;
+    });
+
+    // Update simulation live when sliders move
+    maxFloorSlider.addEventListener("input", updateSimulation);
+    ticketsSlider.addEventListener("input", updateSimulation);
+
+    // Initial render
+    updateSimulation();
+  </script>
+
+</body>
+</html>
