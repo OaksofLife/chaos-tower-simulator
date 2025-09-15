@@ -2,33 +2,84 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chaos Tower Simulator</title>
   <style>
-    body { font-family: sans-serif; padding: 2rem; max-width: 600px; margin: auto; }
-    label { display: block; margin-top: 1rem; }
-    input[type="range"], input[type="number"] { width: 100%; padding: 0.3rem; margin-top: 0.2rem; }
-    .value { font-weight: bold; }
-    .result { margin-top: 1rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px; background: #f9f9f9; }
-    button { margin-top: 1rem; padding: 0.5rem; width: 100%; }
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: url('https://cdn.cloudflare.steamstatic.com/steam/apps/707710/ss_1.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    .container {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    }
+    h1 {
+      text-align: center;
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    label {
+      font-size: 1.2rem;
+      margin-top: 1rem;
+      display: block;
+    }
+    input[type="range"], input[type="number"], button {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.5rem;
+      border: none;
+      border-radius: 5px;
+      background: #444;
+      color: #fff;
+      font-size: 1rem;
+    }
+    button {
+      background: #28a745;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #218838;
+    }
+    .result {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 10px;
+      border: 1px solid #444;
+    }
+    .result strong {
+      color: #ffc107;
+    }
   </style>
 </head>
 <body>
 
-  <h1>Chaos Tower Simulator</h1>
+  <div class="container">
+    <h1>Chaos Tower Simulator</h1>
 
-  <label>Maximum Floor: <span class="value" id="maxFloorValue">250</span></label>
-  <input type="range" id="maxFloor" min="1" max="300" value="250">
+    <label for="maxFloor">Maximum Floor: <span id="maxFloorValue">250</span></label>
+    <input type="range" id="maxFloor" min="1" max="300" value="250">
 
-  <label>Tickets Already Owned: <span class="value" id="ticketsValue">0</span></label>
-  <input type="range" id="ticketsOwned" min="0" max="200" value="0">
+    <label for="ticketsOwned">Tickets Already Owned: <span id="ticketsValue">0</span></label>
+    <input type="range" id="ticketsOwned" min="0" max="200" value="0">
 
-  <label>Essence Value per 50 Crystals:</label>
-  <input type="number" id="essenceValue" min="1" value="40">
+    <label for="essenceValue">Essence Value per 50 Crystals:</label>
+    <input type="number" id="essenceValue" min="1" value="40">
 
-  <button id="recommendBtn">Recommend Extra Tickets</button>
+    <button id="recommendBtn">Recommend Extra Tickets</button>
 
-  <div class="result" id="result"></div>
-
+    <div class="result" id="result"></div>
+  </div>
+  
   <script>
     function calculateEssencePerFloor(floor) {
       if (floor <= 0) return 0;
