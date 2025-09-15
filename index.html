@@ -70,7 +70,7 @@
     <input type="range" id="maxFloor" min="1" max="300" value="250">
 
     <label for="ticketsOwned">Tickets Bought: <span id="ticketsValue">0</span></label>
-    <input type="range" id="ticketsOwned" min="0" max="200" value="0">
+    <input type="range" id="ticketsOwned" min="0" max="300" value="0">
 
     <label for="essenceValue">Essence Value per 50 Crystals:</label>
     <input type="number" id="essenceValue" min="1" value="40">
@@ -138,7 +138,7 @@
 
     function recommendExtraTickets(maxFloor, alreadyOwned, essencePer50) {
       let bestTickets = 0;
-      const maxExtraTickets = 200;
+      const maxExtraTickets = 300;
 
       for (let extraTickets = 1; extraTickets <= maxExtraTickets; extraTickets++) {
         const currentResult = simulateEvent(maxFloor, alreadyOwned + extraTickets);
